@@ -4,6 +4,12 @@
 -- Step 3: Red Black BST (balanced)  
 -- Since 2 and 3 are same, next check point from 1 should be 3
 
+-- References:
+-- http://learnyouahaskell.com/zippers
+-- http://learnyouahaskell.com/making-our-own-types-and-typeclasses#recursive-data-structures
+-- Prof. Robert Sedgewick "Algorithms 4th Edition" 
+-- http://algs4.cs.princeton.edu/30searching/
+
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
 
 singleton :: a -> Tree a  
