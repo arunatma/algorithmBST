@@ -1,3 +1,9 @@
+-- Plan: 
+-- Step 1: Simple BST
+-- Step 2: 2-3 BST (balanced)
+-- Step 3: Red Black BST (balanced)  
+-- Since 2 and 3 are same, next check point from 1 should be 3
+
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
 
 singleton :: a -> Tree a  
