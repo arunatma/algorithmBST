@@ -9,6 +9,8 @@
 -- http://learnyouahaskell.com/making-our-own-types-and-typeclasses#recursive-data-structures
 -- Prof. Robert Sedgewick "Algorithms 4th Edition" 
 -- http://algs4.cs.princeton.edu/30searching/
+-- Visualization: https://www.cs.usfca.edu/~galles/visualization/RedBlack.html
+-- D3 Algorithms: https://bost.ocks.org/mike/algorithms/
 
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
 
@@ -17,40 +19,184 @@ singleton x = Node x EmptyTree EmptyTree
   
 treeInsert :: (Ord a) => a -> Tree a -> Tree a  
 treeInsert x EmptyTree = singleton x  
-treeInsert x (Node a left right)   
-    | x == a = Node x left right  
-    | x < a  = Node a (treeInsert x left) right  
-    | x > a  = Node a left (treeInsert x right)  
+treeInsert x (Node a l r)   
+    | x == a = Node x l r  
+    | x < a  = Node a (treeInsert x l) r  
+    | x > a  = Node a l (treeInsert x r)  
     
 treeElem :: (Ord a) => a -> Tree a -> Bool  
 treeElem x EmptyTree = False  
-treeElem x (Node a left right)  
+treeElem x (Node a l r)  
     | x == a = True  
-    | x < a  = treeElem x left  
-    | x > a  = treeElem x right  
+    | x < a  = treeElem x l  
+    | x > a  = treeElem x r  
 
 -- finds the minimum node tree                           
 treeMin :: (Ord a) => Tree a -> Tree a 
 treeMin ft@(Node x EmptyTree _) = ft
-treeMin (Node x left _) = treeMin left
+treeMin (Node x l _) = treeMin l
 
 deleteMin :: Tree a -> Tree a
-deleteMin (Node x EmptyTree right) = right
-deleteMin (Node x left right) = (Node x (deleteMin left) right) 
+deleteMin (Node x EmptyTree r) = r
+deleteMin (Node x l r) = (Node x (deleteMin l) r) 
 
 delete :: (Ord a) => a -> Tree a -> Tree a
 delete k EmptyTree = EmptyTree
-delete k (Node x left right) 
-    | k < x = Node x (delete k left) right
-    | k > x = Node x left (delete k right)
-    | right == EmptyTree = left
-    | left == EmptyTree = right
-    | otherwise = Node minR left (deleteMin right) 
-        where Node minR lt rt = (treeMin right)
-
+delete k (Node x l r) 
+    | k < x = Node x (delete k l) r
+    | k > x = Node x l (delete k r)
+    | r == EmptyTree = l
+    | l == EmptyTree = r
+    | otherwise = Node minR l (deleteMin r) 
+        where Node minR lt rt = (treeMin r)
         
--- Example
+data Color = Red | Black deriving (Show, Read, Eq)
+
+data TreeRBT a = EmptyRBT | NodeRBT a Color (TreeRBT a) (TreeRBT a) deriving (Show, Read, Eq)
+
+isRed :: (Ord a) => TreeRBT a -> Bool
+isRed EmptyRBT            = False
+isRed (NodeRBT _ c _ _)   = c == Red
+
+isBlack :: (Ord a) => TreeRBT a -> Bool
+isBlack = not . isRed
+
+rotateLeft :: (Ord a) => TreeRBT a -> TreeRBT a
+rotateLeft EmptyRBT                                 = EmptyRBT
+rotateLeft orig@(NodeRBT _ _ _ EmptyRBT)            = orig
+rotateLeft (NodeRBT a c l (NodeRBT ra rc rl rr))    = 
+    NodeRBT ra c (NodeRBT a Red l rl) rr
+
+rotateRight :: (Ord a) => TreeRBT a -> TreeRBT a
+rotateRight EmptyRBT                                 = EmptyRBT
+rotateRight orig@(NodeRBT _ _ EmptyRBT _)            = orig
+rotateRight (NodeRBT a c (NodeRBT la lc ll lr) r)   = 
+    NodeRBT la c ll (NodeRBT a Red lr r)
+    
+singleRBT :: a -> TreeRBT a  
+singleRBT x = NodeRBT x Red EmptyRBT EmptyRBT
+
+insertRBT :: (Ord a) => a -> TreeRBT a -> TreeRBT a    
+insertRBT x EmptyRBT = singleRBT x
+insertRBT x inTree@(NodeRBT a c l r)
+    | x < a     = realign $ NodeRBT a c (insertRBT x l) r
+    | x > a     = realign $ NodeRBT a c l (insertRBT x r)
+    | x == a    = inTree
+    where 
+    realign t = step3 $ step2 $ step1 t 
+    step1 t1@(NodeRBT a1 c1 l1 r1)
+        | isRed r1 && isBlack l1    = rotateLeft t1
+        | otherwise                 = t1
+    step2 t2@(NodeRBT a2 c2 l2 r2)
+        | isRed l2 && (isRed . left $ l2)   = rotateRight t2
+        | otherwise                         = t2
+    step3 t3@(NodeRBT a2 c2 l2 r2)
+        | isRed l2 && isRed r2      = flipColors t3
+        | otherwise                 = t3
+    
+invert :: Color -> Color
+invert Red = Black
+invert Black = Red 
+    
+changeColor :: (Ord a) => TreeRBT a -> TreeRBT a
+changeColor EmptyRBT = EmptyRBT
+changeColor (NodeRBT a c l r) = NodeRBT a (invert c) l r
+    
+flipColors :: (Ord a) => TreeRBT a -> TreeRBT a
+flipColors EmptyRBT = EmptyRBT
+flipColors (NodeRBT a c l r) = NodeRBT a (invert c) nl nr 
+    where nl = changeColor l 
+          nr = changeColor r
+          
+searchRBT :: (Ord a) => a -> TreeRBT a -> Bool  
+searchRBT x EmptyRBT = False  
+searchRBT x (NodeRBT a c l r)  
+    | x == a = True  
+    | x < a  = searchRBT x l  
+    | x > a  = searchRBT x r
+    
+left :: (Ord a) => TreeRBT a -> TreeRBT a
+left EmptyRBT = EmptyRBT
+left (NodeRBT a c l r) = l
+
+right :: (Ord a) => TreeRBT a -> TreeRBT a
+right EmptyRBT = EmptyRBT
+right (NodeRBT a c l r) = r
+
+moveRedLeft :: (Ord a) => TreeRBT a -> TreeRBT a
+moveRedLeft t = procMoveLeft (flipColors t)
+    where procMoveLeft EmptyRBT = EmptyRBT
+          procMoveLeft t 
+            | isRed . left . right $ t  =  flipColors . rotateLeft . rotateRightBranch $ t
+            | otherwise                 = t
+    
+rotateRightBranch :: (Ord a) => TreeRBT a -> TreeRBT a
+rotateRightBranch  EmptyRBT         = EmptyRBT    
+rotateRightBranch (NodeRBT a c l r) = NodeRBT a c l (rotateRight r)
+
+moveRedRight :: (Ord a) => TreeRBT a -> TreeRBT a
+moveRedRight t = procMoveRight (flipColors t)
+    where procMoveRight EmptyRBT = EmptyRBT
+          procMoveRight t 
+            | isRed . left . left $ t  =  flipColors . rotateRight $ t
+            | otherwise                 = t
+            
+balance :: (Ord a) => TreeRBT a -> TreeRBT a
+balance EmptyRBT = EmptyRBT
+balance t
+    | isRed . right $ t                                 = rotateLeft t
+    | (isRed . left $ t) && (isRed . left . left $ t)   = rotateRight t
+    | (isRed . left $ t) && (isRed . right $ t)         = flipColors t
+    | otherwise                                         = t
+
+isEmptyRBT :: (Ord a) => TreeRBT a -> Bool
+isEmptyRBT t = (t == EmptyRBT)
+    
+deleteMinRBT :: (Ord a) => TreeRBT a -> TreeRBT a
+deleteMinRBT EmptyRBT = EmptyRBT
+deleteMinRBT t 
+    | isEmptyRBT . left $ t                                 = EmptyRBT
+    | (isBlack . left $ t) && (isBlack. left . left $ t)    = postProc (moveRedLeft t)
+    | otherwise                                             = postProc t
+    where 
+    postProc t1@(NodeRBT a c l r) = balance (NodeRBT a c (deleteMinRBT l) r)
+    
+deleteRBT :: (Ord a) => a -> TreeRBT a -> TreeRBT a
+deleteRBT k EmptyRBT = EmptyRBT
+deleteRBT k t@(NodeRBT a c l r)
+    | k < a = balance $ deleteFromLeft (preProc t)
+    | otherwise = balance $ deleteFromRight t
+    where deleteFromLeft t1@(NodeRBT a1 c1 l1 r1) =  (NodeRBT a1 c1 (deleteRBT k l1) r1)
+          preProc t2
+            | (isBlack . left $ t2) && (isBlack. left . left $ t2) = moveRedLeft t2
+            | otherwise                                            = t2 
+          deleteFromRight t3 = cond4 . cond3 . cond2. cond1 $ t3
+          cond1 x 
+            | isRed (left x)    = rotateRight x
+            | otherwise         = x
+          cond2 EmptyRBT    = EmptyRBT
+          cond2 x@(NodeRBT a2 c2 l2 r2) 
+            | (k == a2) && (isEmptyRBT . right $ x)  = EmptyRBT
+            | otherwise                              = x
+          cond3 x
+            | (isBlack . right $ x) && (isBlack . left . right $ x)    = moveRedRight x
+            | otherwise                                                = x
+          cond4 EmptyRBT   = EmptyRBT
+          cond4 x@(NodeRBT a4 c4 l4 r4) 
+            | (k == a4) = NodeRBT (minKey r4) c4 l4 (deleteMinRBT r4)
+            | otherwise = NodeRBT a4 c4 l4 (deleteRBT k r4)
+          minKey x = getKey $ minRBT x
+          getKey x@(NodeRBT a5 _ _ _) = a5   
+          
+minRBT :: (Ord a) => TreeRBT a -> TreeRBT a
+minRBT EmptyRBT = EmptyRBT
+minRBT t@(NodeRBT a c l r) 
+    | l == EmptyRBT = t
+    | otherwise     = minRBT l
+
 {-
+Sample Inputs
+
         10  15 3 20 34 21 5 6 8 4 3 9
         
                     10
@@ -60,7 +206,6 @@ delete k (Node x left right)
                         8      21 
                           9
 -}
-
 
 freeTree :: Tree Int  
 freeTree =   
@@ -88,83 +233,7 @@ freeTree =
                 )
             )  
         ) 
-
-data Color = Red | Black deriving (Show, Read, Eq)
-
-data TreeRBT a = EmptyRBT | NodeRBT a Color (TreeRBT a) (TreeRBT a) deriving (Show, Read, Eq)
-
-red :: (Ord a) => TreeRBT a -> Bool
-red EmptyRBT            = False
-red (NodeRBT _ c _ _)   = c == Red
-
-black :: (Ord a) => TreeRBT a -> Bool
-black = not . red
-
-rotateLeft :: (Ord a) => TreeRBT a -> TreeRBT a
-rotateLeft EmptyRBT                                 = EmptyRBT
-rotateLeft orig@(NodeRBT _ _ _ EmptyRBT)            = orig
-rotateLeft (NodeRBT a c l (NodeRBT ra rc rl rr))    = 
-    NodeRBT ra c (NodeRBT a Red l rl) rr
-
-rotateRight :: (Ord a) => TreeRBT a -> TreeRBT a
-rotateRight EmptyRBT                                 = EmptyRBT
-rotateRight orig@(NodeRBT _ _ EmptyRBT _)            = orig
-rotateRight (NodeRBT a c (NodeRBT la lc ll lr) r)   = 
-    NodeRBT la c ll (NodeRBT a Red lr r)
     
-singleRBT :: a -> TreeRBT a  
-singleRBT x = NodeRBT x Red EmptyRBT EmptyRBT
+atojRBT = insertRBT 'J' $ insertRBT 'I' $ insertRBT 'H' $ insertRBT 'G' $ insertRBT 'F' $ insertRBT 'E' $ insertRBT 'D' $ insertRBT 'C' $ insertRBT 'B' $ insertRBT 'A' EmptyRBT
 
-insertRBT :: (Ord a) => a -> TreeRBT a -> TreeRBT a  
-insertRBT x EmptyRBT = singleRBT x  
-insertRBT x t@(NodeRBT a c l r)
-    | red nr && black nl    = rotateLeft nt
-    | red nl && red nll     = rotateRight nt
-    | red nl && red nr      = flipColors nt
-    | otherwise             = nt
-    where nl                      = newL x t 
-          nr                      = newR x t
-          nt                      = newT x t
-          (NodeRBT nx nc nll nlr) = nl
-    
-newT :: (Ord a) => a -> TreeRBT a -> TreeRBT a    
-newT x EmptyRBT = singleRBT x
-newT x (NodeRBT a c l r)
-    | x < a     = NodeRBT a c (insertRBT x l) r
-    | x > a     = NodeRBT a c l (insertRBT x r)
-    | x == a    = NodeRBT a c l r
-    
-newL :: (Ord a) => a -> TreeRBT a -> TreeRBT a    
-newL x EmptyRBT = singleRBT x
-newL x (NodeRBT a c l r)
-    | x < a     = insertRBT x l
-    | otherwise = l
-
-newR :: (Ord a) => a -> TreeRBT a -> TreeRBT a    
-newR x EmptyRBT = singleRBT x
-newR x (NodeRBT a c l r)
-    | x > a     = insertRBT x r
-    | otherwise = r
-    
-invert :: Color -> Color
-invert Red = Black
-invert Black = Red 
-    
-changeColor :: (Ord a) => TreeRBT a -> TreeRBT a
-changeColor EmptyRBT = EmptyRBT
-changeColor (NodeRBT a c l r) = NodeRBT a (invert c) l r
-    
-flipColors :: (Ord a) => TreeRBT a -> TreeRBT a
-flipColors EmptyRBT = EmptyRBT
-flipColors (NodeRBT a c l r) = NodeRBT a (invert c) nl nr 
-    where nl = changeColor l 
-          nr = changeColor r
-          
-searchRBT :: (Ord a) => a -> TreeRBT a -> Bool  
-searchRBT x EmptyRBT = False  
-searchRBT x (NodeRBT a c left right)  
-    | x == a = True  
-    | x < a  = searchRBT x left  
-    | x > a  = searchRBT x right
-    
-    
+jtoaRBT = insertRBT 'A' $ insertRBT 'B' $ insertRBT 'C' $ insertRBT 'D' $ insertRBT 'E' $ insertRBT 'F' $ insertRBT 'G' $ insertRBT 'H' $ insertRBT 'I' $ insertRBT 'J' EmptyRBT
