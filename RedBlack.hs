@@ -12,6 +12,8 @@
 -- Visualization: https://www.cs.usfca.edu/~galles/visualization/RedBlack.html
 -- D3 Algorithms: https://bost.ocks.org/mike/algorithms/
 
+import Test.QuickCheck
+
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
 
 singleton :: a -> Tree a  
@@ -237,3 +239,38 @@ freeTree =
 atojRBT = insertRBT 'J' $ insertRBT 'I' $ insertRBT 'H' $ insertRBT 'G' $ insertRBT 'F' $ insertRBT 'E' $ insertRBT 'D' $ insertRBT 'C' $ insertRBT 'B' $ insertRBT 'A' EmptyRBT
 
 jtoaRBT = insertRBT 'A' $ insertRBT 'B' $ insertRBT 'C' $ insertRBT 'D' $ insertRBT 'E' $ insertRBT 'F' $ insertRBT 'G' $ insertRBT 'H' $ insertRBT 'I' $ insertRBT 'J' EmptyRBT
+
+-- QuickCheck Tests 
+-- QuickCheck References
+-- http://www.stuartgunter.org/intro-to-quickcheck/
+-- http://www.cse.chalmers.se/~rjmh/QuickCheck/manual.html
+
+test1 = quickCheck ((\x -> (deleteMinRBT (singleRBT x)) == EmptyRBT) :: Char -> Bool)
+test2 = quickCheck ((\x -> (deleteMinRBT (singleRBT x)) == EmptyRBT) :: Int -> Bool)
+test3 = quickCheck ((\x -> (deleteMinRBT (insertRBT x EmptyRBT)) == EmptyRBT) :: Char -> Bool)
+test4 = quickCheck ((\x -> (deleteMinRBT (insertRBT x EmptyRBT)) == EmptyRBT) :: Int -> Bool)
+
+test5 = quickCheck ((\x y -> (deleteMinRBT (deleteMinRBT (insertRBT y (insertRBT x EmptyRBT)))) == EmptyRBT) :: Char -> Char -> Bool)
+test6 = quickCheck ((\x y -> (deleteMinRBT (deleteMinRBT (insertRBT y (insertRBT x EmptyRBT)))) == EmptyRBT) :: Int -> Int -> Bool)
+
+test7 = quickCheck ((\x y z -> (deleteRBT y (deleteRBT z (deleteRBT x  
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT)))))) == EmptyRBT) :: Char -> Char -> Char -> Bool)
+test8 = quickCheck ((\x y z -> (deleteRBT z (deleteRBT x (deleteRBT y  
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT)))))) == EmptyRBT) :: Char -> Char -> Char -> Bool)
+test9 = quickCheck ((\x y z -> (deleteRBT x (deleteRBT y (deleteRBT z  
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT)))))) == EmptyRBT) :: Char -> Char -> Char -> Bool)
+test10 = quickCheck ((\x y z -> (deleteRBT z (deleteRBT y (deleteRBT x  
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT)))))) == EmptyRBT) :: Char -> Char -> Char -> Bool)
+test11 = quickCheck ((\x y z -> (deleteRBT x (deleteRBT z (deleteRBT y  
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT)))))) == EmptyRBT) :: Char -> Char -> Char -> Bool)
+test12 = quickCheck ((\x y z -> (deleteRBT y (deleteRBT x (deleteRBT z  
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT)))))) == EmptyRBT) :: Char -> Char -> Char -> Bool)
+
+test13 = quickCheck ((\x y z -> (deleteRBT y (deleteRBT z   
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT))))) == singleRBT x) :: Char -> Char -> Char -> Bool)
+test14 = quickCheck ((\x y z -> (deleteRBT x (deleteRBT z   
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT))))) == singleRBT y) :: Char -> Char -> Char -> Bool)                          
+test15 = quickCheck ((\x y z -> (deleteRBT x (deleteRBT y   
+                               (insertRBT z (insertRBT y (insertRBT x EmptyRBT))))) == singleRBT z) :: Char -> Char -> Char -> Bool)
+
+-- test16 = quickCheck ((\x -> (searchRBT x jtoaRBT) == True) :: Char -> Bool)
