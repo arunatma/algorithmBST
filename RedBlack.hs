@@ -1,23 +1,12 @@
--- Plan: 
--- Step 1: Simple BST
--- Step 2: 2-3 BST (balanced)
--- Step 3: Red Black BST (balanced)  
--- Since 2 and 3 are same, next check point from 1 should be 3
-
--- References:
--- http://learnyouahaskell.com/zippers
--- http://learnyouahaskell.com/making-our-own-types-and-typeclasses#recursive-data-structures
--- Prof. Robert Sedgewick "Algorithms 4th Edition" 
--- http://algs4.cs.princeton.edu/30searching/
--- Visualization: https://www.cs.usfca.edu/~galles/visualization/RedBlack.html
--- D3 Algorithms: https://bost.ocks.org/mike/algorithms/
 
 import Test.QuickCheck
 
+-- Data Structure to hold a normal tree
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
 
 singleton :: a -> Tree a  
 singleton x = Node x EmptyTree EmptyTree  
+
   
 treeInsert :: (Ord a) => a -> Tree a -> Tree a  
 treeInsert x EmptyTree = singleton x  
@@ -196,18 +185,6 @@ minRBT t@(NodeRBT a c l r)
     | l == EmptyRBT = t
     | otherwise     = minRBT l
 
-{-
-Sample Inputs
-
-        10  15 3 20 34 21 5 6 8 4 3 9
-        
-                    10
-                  3      15
-                    5        20 
-                   4  6           34 
-                        8      21 
-                          9
--}
 
 freeTree :: Tree Int  
 freeTree =   
@@ -274,3 +251,11 @@ test15 = quickCheck ((\x y z -> (deleteRBT x (deleteRBT y
                                (insertRBT z (insertRBT y (insertRBT x EmptyRBT))))) == singleRBT z) :: Char -> Char -> Char -> Bool)
 
 -- test16 = quickCheck ((\x -> (searchRBT x jtoaRBT) == True) :: Char -> Bool)
+
+-- References:
+-- http://learnyouahaskell.com/zippers
+-- http://learnyouahaskell.com/making-our-own-types-and-typeclasses#recursive-data-structures
+-- Prof. Robert Sedgewick "Algorithms 4th Edition" 
+-- http://algs4.cs.princeton.edu/30searching/
+-- Visualization: https://www.cs.usfca.edu/~galles/visualization/RedBlack.html
+-- D3 Algorithms: https://bost.ocks.org/mike/algorithms/
